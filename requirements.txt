@@ -1,0 +1,14 @@
+torch~=2.7.0
+transformers~=4.51.3
+optimum[onnxruntime]
+onnx~=1.18.0
+onnxruntime~=1.19.2
+onnxoptimizer~=0.3.13
+onnxruntime-tools
+numpy~=2.0.2
+pandas
+scikit-learn
+matplotlib
+datasets>=2.18.0
+pyarrow>=13.0.0
+polars>=0.20.0
