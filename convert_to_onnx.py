@@ -67,6 +67,7 @@ def quantize_onnx_model(model_dir):
     quantize_dynamic(
         optimized_path,
         quantized_path,
+        per_channel=True,
         weight_type=QuantType.QInt8
     )
     print("[✓] Quantization complete.")
@@ -93,7 +94,7 @@ def update_config_labels(model_dir):
 
 def main():
     parser = argparse.ArgumentParser(description="ONNX export and quantization pipeline")
-    parser.add_argument("--model-name", type=str, default="meta-llama/Llama-Prompt-Guard-2-22M", help="Name of the model")
+    parser.add_argument("--model-name", type=str, default="meta-llama/Llama-Prompt-Guard-2-86M", help="Name of the model")
     parser.add_argument("--export-onnx", action="store_true", help="Export model to ONNX format")
     parser.add_argument("--quantize-onnx", action="store_true", help="Quantize ONNX model (auto-optimizes if needed)")
     parser.add_argument("--update-config", action="store_true", help="Update config.json with labels")

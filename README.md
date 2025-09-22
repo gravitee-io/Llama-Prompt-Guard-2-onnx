@@ -60,12 +60,12 @@ You can toggle `--quantized` to evaluate either the full or quantized model.
 
 ## 🧪 Evaluation Results
 
-| Model                      | Accuracy | Precision | Recall | F1 Score | AUC-ROC | Inference Time |
-|----------------------------|----------|-----------|--------|----------|---------|----------------|
-| Llama-Prompt-Guard-2-22M   | 0.9569   | 0.9879    | 0.9260 | 0.9559   | 0.9259  | 33s            |
-| Llama-Prompt-Guard-2-22M-q | 0.9473   | 1.0000    | 0.8956 | 0.9449   | 0.9032  | 29s            |
-| Llama-Prompt-Guard-2-86M   | 0.9770   | 0.9980    | 0.9564 | 0.9767   | 0.9523  | 1m29s          |
-| Llama-Prompt-Guard-2-86M-q | 0.8937   | 1.0000    | 0.7894 | 0.8823   | 0.7263  | 1m15s          |
+| Model                      | Accuracy | Precision | Recall | F1 Score | AUC-ROC |
+|----------------------------|----------|-----------|--------|----------|---------|
+| Llama-Prompt-Guard-2-22M   | 0.9564   | 0.9888    | 0.9249 | 0.9558   | 0.9234  |
+| Llama-Prompt-Guard-2-22M-q | 0.9579   | 0.9967    | 0.9204 | 0.9449   | 0.9180  |
+| Llama-Prompt-Guard-2-86M   | 0.9801   | 0.9984    | 0.9625 | 0.9801   | 0.9519  |
+| Llama-Prompt-Guard-2-86M-q | 0.8989   | 1.0000    | 0.8018 | 0.89     | 0.7452  |
 
 ## 📥 Dataset
 

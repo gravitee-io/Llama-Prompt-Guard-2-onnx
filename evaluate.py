@@ -1,18 +1,16 @@
 import argparse
 
-import pandas as pd
 import onnxruntime as ort
 import numpy as np
 import matplotlib.pyplot as plt
+from datasets import load_dataset
 from sklearn.metrics import (
     accuracy_score, precision_score, recall_score,
     f1_score, roc_curve, auc
 )
 from tqdm import tqdm
 from transformers import AutoTokenizer
-from datasets import load_dataset
 import polars as pl
-
 
 def load_model_and_tokenizer(model_path, quantized):
     print("[*] Loading ONNX model and tokenizer...")
@@ -33,8 +31,15 @@ def predict_logits(text, tokenizer, ort_session):
     return 1 / (1 + np.exp(-logits))
 
 
-def evaluate(validation_df, tokenizer, ort_session, plot_roc=False):
-    scores = pd.DataFrame(columns=["accuracy", "precision", "recall", "f1", "auc_roc"])
+def evaluate(model_path, validation_df, tokenizer, ort_session, plot_roc=False):
+    scores = pl.DataFrame({
+        "model_path": pl.Series([], dtype=pl.Utf8),
+        "accuracy": pl.Series([], dtype=pl.Float64),
+        "precision": pl.Series([], dtype=pl.Float64),
+        "recall": pl.Series([], dtype=pl.Float64),
+        "f1": pl.Series([], dtype=pl.Float64),
+        "auc_roc": pl.Series([], dtype=pl.Float64)
+    })
 
     predictions, probs, actual_labels = [], [], []
 
@@ -60,7 +65,9 @@ def evaluate(validation_df, tokenizer, ort_session, plot_roc=False):
     print(f"F1-Score: {f1:.4f}")
     print(f"AUC-ROC: {roc_auc:.4f}")
 
-    scores.loc[len(scores)] = [accuracy, precision, recall, f1, roc_auc]
+    scores = scores.vstack(pl.DataFrame(
+        {"model_path": model_path, "accuracy": accuracy, "precision": precision, "recall": recall, "f1": f1,
+         "auc_roc": roc_auc}))
 
     if plot_roc:
         plt.figure()
@@ -74,11 +81,21 @@ def evaluate(validation_df, tokenizer, ort_session, plot_roc=False):
 
     return scores
 
+def build_dataset(args, sample_size=8000):
+    dataset = load_dataset(args.dataset)
+    df = pl.concat([dataset["train"].to_polars(), pl.DataFrame(dataset["test"].to_polars())])
+
+    if sample_size and sample_size < df.height:
+        df = df.sample(n=sample_size, seed=4569)
+
+    return df.drop_nans().drop_nulls()
+
+
 def main():
     parser = argparse.ArgumentParser(description="Evaluate ONNX Detoxify model")
     parser.add_argument("--dataset", type=str, default="jackhhao/jailbreak-classification",
                         help="Name of the dataset")
-    parser.add_argument("--model-path", type=str, default="gravitee-io/Llama-Prompt-Guard-2-22M-onnx/",
+    parser.add_argument("--model-paths", type=str, default="gravitee-io/Llama-Prompt-Guard-2-22M-onnx,gravitee-io/Llama-Prompt-Guard-2-86M-onnx",
                         help="Path to quantized ONNX model")
     parser.add_argument("--quantized", action="store_true", help="Plot ROC curves")
     parser.add_argument("--plot-roc", action="store_true", help="Plot ROC curves")
@@ -86,24 +103,17 @@ def main():
 
     validation_df = build_dataset(args)
 
-    session, tokenizer = load_model_and_tokenizer(args.model_path, args.quantized)
-
-    scores = evaluate(validation_df, tokenizer, session, args.plot_roc)
+    dfs = []
+    for model_path in args.model_paths.split(","):
+        session, tokenizer = load_model_and_tokenizer(model_path, args.quantized)
+        scores = evaluate(model_path, validation_df, tokenizer, session, args.plot_roc)
+        dfs.append(scores)
 
     print("\nAll scores:")
-    print(scores)
 
-
-def build_dataset(args, sample_size=8000):
-    dataset = load_dataset(args.dataset)
-    data = dataset["train"]
-    df = pl.DataFrame(data.to_list())
-
-    if sample_size and sample_size < df.height:
-        df = df.sample(n=sample_size, seed=4569)
-
-    return df.drop_nans().drop_nulls()
-
+    with pl.Config(fmt_str_lengths=500):
+        results = pl.concat(dfs)
+        print(results)
 
 if __name__ == "__main__":
     main()
